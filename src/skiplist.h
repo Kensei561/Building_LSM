@@ -38,14 +38,6 @@ public:
             return;
         }
 
-        int height = RandomHeight();
-        int current_max = max_height_.load(std::memory_order_relaxed);
-        while (height > current_max) {
-            if (max_height_.compare_exchange_weak(current_max, height,
-                                                 std::memory_order_relaxed)) {
-                break;
-            }
-        }
 
         Node<Key, Value>* x = NewNode(key, value, height);
 
@@ -71,6 +63,15 @@ public:
                     break;
                 }
                 FindGreaterOrEqual(key, prev);
+            }
+        }
+
+        int height = RandomHeight();
+        int current_max = max_height_.load(std::memory_order_release);
+        while (height > current_max) {
+            if (max_height_.compare_exchange_weak(current_max, height,
+                                                 std::memory_order_relaxed)) {
+                break;
             }
         }
     }
@@ -100,7 +101,7 @@ private:
 
     Node<Key, Value>* FindGreaterOrEqual(const Key& key, Node<Key, Value>** prev) const {
         Node<Key, Value>* current = head_;
-        int level = max_height_.load(std::memory_order_relaxed) - 1;
+        int level = max_height_.load(std::memory_order_acquire) - 1;
 
         while (true) {
             Node<Key, Value>* next = current->next[level].load(std::memory_order_acquire);

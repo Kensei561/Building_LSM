@@ -61,3 +61,4 @@ char* Arena::AllocateNewBlock(size_t block_bytes) {
 size_t Arena::MemoryUsage() const {
     return memory_usage_.load(std::memory_order_relaxed);
 }
+
